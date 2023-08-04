@@ -1,10 +1,12 @@
 #include <stdio.h>
+#include<unistd.h>
 
 int main() {
     // printf() displays the string inside quotation
-    while (1) {
-	
-    }
+    
+    
+    sleep(30);
+    printf("Ended");
     return 0;
 }
 
