@@ -36,7 +36,7 @@ while true; do
         *.c)
             run_c_code "$input"
             ;;
-        exit)
+        quit)
             echo "Goodbye!"
             exit 0
             ;;
