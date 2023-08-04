@@ -16,6 +16,8 @@
 
 	char process[20];
 	char program[20];
+	char program2[20];
+	char process2[20];
 	
 
 // Greeting shell during startup
@@ -34,8 +36,10 @@ int takeInput(char* str)
 {
 	char* buf;
 	char keyword[] = "kill";
+	char ampersand[] = "&";
 
 	buf = readline(" -> ");
+
 	
 	char* found = strstr(buf, keyword);
     	if (found != NULL) {
@@ -44,7 +48,6 @@ int takeInput(char* str)
         strncpy(keyword, buf, sizeof(keyword));
         keyword[4] = '\0'; // Null-terminate the keyword
 
-
         // Copy the rest of the input into another variable
         strncpy(process, found + strlen(keyword) + 1, sizeof(process));
         process[strcspn(process, "\n")] = '\0'; // Remove the newline character from restOfInput
@@ -52,7 +55,7 @@ int takeInput(char* str)
 	}
 	
 	const char* extension = strrchr(buf, '.');
-
+	char command, filename;
     	if (extension != NULL && strcmp(extension, ".c") == 0) {
         // The string contains ".c" extension
         int length = extension - buf; // Calculate the length without the extension
@@ -60,6 +63,26 @@ int takeInput(char* str)
         program[length] = '\0';
         buf = ".c";
         }
+
+
+	char* findAmp =  strstr(buf, ampersand);
+	if (findAmp != NULL){
+		for (int i = 0, j = 0; buf[i] != '\0'; i++) {
+			if (buf[i] != '&') {
+		    	program2[j] = buf[i];
+		    	j++;
+		}
+	    }
+	    }
+	    const char* extension_amp = strrchr(program2, '.');
+	    if (extension != NULL && strcmp(extension, ".c") == 0) {
+		// The string contains ".c" extension
+		int length_amp = extension - buf; // Calculate the length without the extension
+		strncpy(process2, program2, length_amp);
+		program[length_amp] = '\0';
+	    buf = "&";
+	}
+
 
 	if (strlen(buf) != 0) {
 		add_history(buf);
@@ -78,7 +101,7 @@ void printDir()
 	printf("\n%s", cwd);
 }
 
-// Function where the system command is executed
+// Function where the system is executed
 void execArgs(char** parsed)
 {
 	// Forking a child
@@ -165,7 +188,7 @@ void openHelp()
 // Function to execute builtin commands
 int ownCmdHandler(char** parsed)
 {
-	int NoOfOwnCmds = 4, i, switchOwnArg = 0;
+	int NoOfOwnCmds = 5, i, switchOwnArg = 0;
 	char* ListOfOwnCmds[NoOfOwnCmds];
 	char* username;
 
@@ -173,6 +196,7 @@ int ownCmdHandler(char** parsed)
 	ListOfOwnCmds[1] = "kill";
 	ListOfOwnCmds[2] = "pid";
 	ListOfOwnCmds[3] = ".c";
+	ListOfOwnCmds[4] = "&";
 
 	for (i = 0; i < NoOfOwnCmds; i++) {
 		if (strcmp(parsed[0], ListOfOwnCmds[i]) == 0) {
@@ -197,7 +221,26 @@ int ownCmdHandler(char** parsed)
 		}
 		return 1;
 	case 3:
-		openHelp();
+		    pid_t pid = fork();
+
+		    if (pid < 0) {
+			// Fork failed
+			perror("Fork failed");
+			return 1;
+		    } else if (pid == 0) {
+			// Child process
+			printf("Child process is running (PID: %d)\n", getpid());
+			// Perform child process tasks here
+			// For demonstration purposes, we'll just sleep for a few seconds.
+			sleep(5);
+			printf("Child process (PID: %d) is done.\n", getpid());
+		    } else {
+			// Parent process
+			printf("Parent process (PID: %d) spawned child process with PID: %d\n", getpid(), pid);
+			int status;
+			wait(&status);
+			printf("Child process with PID: %d has terminated.\n", pid);
+		    }
 		return 1;
 	case 4:
 	
@@ -213,13 +256,36 @@ int ownCmdHandler(char** parsed)
 			printf("Compilation successful.\n");
 
 			// Construct the command to run the compiled program
-			snprintf(command1, sizeof(command), "./%s", program);
+			snprintf(command1, sizeof(command1), "./%s", program);
 
 			// Run the compiled program
 			system(command1);
 		    } else {
 			printf("Compilation failed.\n");
 		    }
+		return 1;
+	case 5:
+	
+	    char compileCommand1[100];
+	    char command11[100];
+
+		snprintf(compileCommand1, sizeof(compileCommand1), "gcc %s.c -o %s", process2, process2);
+
+	    int compileResult1 = system(compileCommand1);
+
+	    // Check if compilation was successful
+	    if (compileResult1 == 0) {
+		printf("Compilation successful.\n");
+
+		// Construct the command to run the compiled program
+		snprintf(command11, sizeof(command11), "./%s", process2);
+
+		// Run the compiled program
+		system(command11);
+	    } else {
+		printf("Compilation failed.\n");
+	    }
+	    
 		return 1;
 	default:
 		break;
