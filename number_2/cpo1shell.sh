@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Prompt function
 prompt() {
     echo -n "-> "
@@ -93,6 +94,7 @@ while true; do
         *.c)
             run_c_code "$input"
             ;;
+        exit)
             echo "Goodbye!"
             exit 0
             ;;
