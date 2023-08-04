@@ -1,8 +1,9 @@
 #!/bin/bash
 
-# Array to keep track of running and queued programs
-declare -a running_programs=()
-declare -a queued_programs=()
+# Prompt function
+prompt() {
+    echo -n "-> "
+}
 
 # Function to compile and run C code
 run_c_code() {
@@ -16,6 +17,10 @@ run_c_code() {
         echo "Compilation failed."
     fi
 }
+
+# Array to keep track of running and queued programs
+declare -a running_programs=()
+declare -a queued_programs=()
 
 # Function to handle the dispatcher and queuing
 dispatch_and_queue() {
@@ -46,7 +51,7 @@ dispatch_and_queue &
 
 # Main loop
 while true; do
-    echo -n "-> "
+    prompt
     read -r input
 
     # Process the input here
@@ -69,7 +74,6 @@ while true; do
                 if [ ${#running_programs[@]} -lt 3 ]; then
                     if [ ${#queued_programs[@]} -lt 2 ]; then
                         running_programs+=("$input")
-                        queued_programs+=($(stat -c %s "$input")) # Store the physical size of the program
                         run_c_code "$input" &
                     else
                         echo "Queue already full."
@@ -77,7 +81,7 @@ while true; do
                 else
                     echo "Three processes are already running, putting program $input in the queue."
                     if [ ${#queued_programs[@]} -lt 2 ]; then
-                        queued_programs+=($(stat -c %s "$input")) # Store the physical size of the program
+                        queued_programs+=("$input")
                     else
                         echo "Queue already full."
                     fi
@@ -89,12 +93,11 @@ while true; do
         *.c)
             if [ ${#running_programs[@]} -lt 3 ]; then
                 running_programs+=("$input")
-                queued_programs+=($(stat -c %s "$input")) # Store the physical size of the program
                 run_c_code "$input" &
             else
                 echo "Three processes are already running, putting program $input in the queue."
                 if [ ${#queued_programs[@]} -lt 2 ]; then
-                    queued_programs+=($(stat -c %s "$input")) # Store the physical size of the program
+                    queued_programs+=("$input")
                 else
                     echo "Queue already full."
                 fi
