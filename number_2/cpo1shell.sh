@@ -5,6 +5,21 @@ prompt() {
     echo -n "-> "
 }
 
+function printRunning(){
+for PID in "${!running_programs[@]}"
+do
+printf "%s\t%s\t%s\t%s\n" "$$" "$PID" "${running_programs[$PID]}" "running"
+done
+
+}
+
+function printQueue(){
+for process in "${queued_program[@]}"
+do
+printf "%s\t%s\t%s\t%s\n" "$$" "N/A" "$process" "queued"
+done
+
+}
 # Function to compile and run C code
 run_c_code() {
     filename="$1"
@@ -12,6 +27,7 @@ run_c_code() {
     gcc "$filename" -o "$binary"
     if [ $? -eq 0 ]; then
         "./$binary"
+        PID=$!
         rm "$binary" # Clean up the compiled binary after execution
     else
         echo "Compilation failed."
@@ -21,6 +37,7 @@ run_c_code() {
 # Array to keep track of running and queued programs
 declare -a running_programs=()
 declare -a queued_programs=()
+declare -a queued_program=()
 
 # Background function to handle dispatching and queuing
 dispatcher() {
@@ -60,6 +77,14 @@ while true; do
     # Process the input here
     case "$input" in
         pid)
+        printf "ppid\tpid\tname\t\tstatus\n"
+        
+		if [[ ${#running_programs[@]} > 0 ]]; then
+			printRunning
+		fi
+		if [[ ${#queued_programs[@]} > 0 ]]; then
+			printQueue
+		fi
              
             ;;
         *\&*)
@@ -67,12 +92,14 @@ while true; do
             if [[ "$input" == *.c ]]; then
                 if [ ${#running_programs[@]} -lt 3 ]; then
                     # If there are fewer than 3 running programs, start the program immediately
-                    running_programs+=("$input")
                     run_c_code "$input" &
+                    PID=$!
+                    running_programs["$PID"]="$input"
                 else
                     # Otherwise, queue the program
                     if [ ${#queued_programs[@]} -lt 2 ]; then
                     queued_programs+=($(stat -c %s "$input")) # Store the physical size of the program
+                    queued_program+=("$input")
                     echo "Program $input queued."
                     else
                     echo "Queue already full"
